@@ -137,8 +137,7 @@ with container_live:
     wav_audio_data = st_audiorec() # tadaaaa! yes, that's it! :D
 
     if wav_audio_data is not None:
-        st.write(wav_audio_data)
         st.write(type(wav_audio_data))
-        # convert the wav_audio_data to a tensorflow tensor to be able to pass it to the function decode_audio to extract waveform
-        wav_audio_data = tf.convert_to_tensor(wav_audio_data, dtype=tf.float32)
+        # wav audio data is of type bytes, so we need to decode it
+        decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
         audio = decode_audio(wav_audio_data)
