@@ -175,3 +175,7 @@ with container_live:
         
         st.write(sound_slice.shape)
         st.write(type(sound_slice))
+        
+        # np.ndarray to bytes
+        sound_slice = sound_slice.tobytes()
+        st.audio(sound_slice, format='audio/wav')
