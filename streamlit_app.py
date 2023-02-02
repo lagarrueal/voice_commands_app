@@ -138,45 +138,47 @@ with container_live:
 
     if wav_audio_data is not None:
         st.write(type(wav_audio_data))
+        
+        wf = decode_audio(wav_audio_data)
         # using librosa, resample to 16kHz
-        try :
-            audio = tf.io.decode_raw(wav_audio_data, tf.float32)
-            st.write(type(audio))
-            st.write(audio)
-        except :
-            st.write("nothing was done")
+        # try :
+        #     audio = tf.io.decode_raw(wav_audio_data, tf.float32)
+        #     st.write(type(audio))
+        #     st.write(audio)
+        # except :
+        #     st.write("nothing was done")
         
-        audio = audio.numpy()
-        audio = np.nan_to_num(audio)
-        st.write(audio)
-        st.write(type(audio))
-        st.write(audio.shape)
-        audio = librosa.resample(audio, orig_sr = 44100, target_sr = 16000)
-        st.write(audio.shape)
-        # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
-        # audio = decode_audio(wav_audio_data)
+        # audio = audio.numpy()
+        # audio = np.nan_to_num(audio)
+        # st.write(audio)
+        # st.write(type(audio))
+        # st.write(audio.shape)
+        # audio = librosa.resample(audio, orig_sr = 44100, target_sr = 16000)
+        # st.write(audio.shape)
+        # # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
+        # # audio = decode_audio(wav_audio_data)
         
-        FRAME_LENGTH = 1024
-        HOP_LENGTH = 256
-        NUM_SECONDS_OF_SLICE = 1
+        # FRAME_LENGTH = 1024
+        # HOP_LENGTH = 256
+        # NUM_SECONDS_OF_SLICE = 1
         
-        clip_rms = librosa.feature.rms(y=audio,
-                                        frame_length=FRAME_LENGTH,
-                                        hop_length=HOP_LENGTH)
+        # clip_rms = librosa.feature.rms(y=audio,
+        #                                 frame_length=FRAME_LENGTH,
+        #                                 hop_length=HOP_LENGTH)
 
-        clip_rms = clip_rms.squeeze()
-        peak_rms_index = clip_rms.argmax()
-        peak_index = peak_rms_index * HOP_LENGTH + int(FRAME_LENGTH)
+        # clip_rms = clip_rms.squeeze()
+        # peak_rms_index = clip_rms.argmax()
+        # peak_index = peak_rms_index * HOP_LENGTH + int(FRAME_LENGTH)
 
-        half_slice_width = int(NUM_SECONDS_OF_SLICE * 16000)
-        left_index = max(0, peak_index - half_slice_width)
-        right_index = peak_index + half_slice_width
-        sound_slice = audio[left_index:right_index]
+        # half_slice_width = int(NUM_SECONDS_OF_SLICE * 16000)
+        # left_index = max(0, peak_index - half_slice_width)
+        # right_index = peak_index + half_slice_width
+        # sound_slice = audio[left_index:right_index]
         
-        st.write(sound_slice.shape)
-        st.write(type(sound_slice))
+        # st.write(sound_slice.shape)
+        # st.write(type(sound_slice))
         
-        # np.ndarray to bytes
-        sound_slice = sound_slice.tobytes()
-        st.write(type(sound_slice))
-        st.audio(sound_slice, format='audio/wav')
+        # # np.ndarray to bytes
+        # sound_slice = sound_slice.tobytes()
+        # st.write(type(sound_slice))
+        # st.audio(sound_slice, format='audio/wav')
