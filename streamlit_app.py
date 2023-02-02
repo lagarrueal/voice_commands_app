@@ -150,6 +150,6 @@ with container_live:
         audio = np.nan_to_num(audio)
         st.write(audio)
         st.write(type(audio))
-        # audio = librosa.resample(audio, 44100, 16000)
+        audio = librosa.resample(audio, orig_sr = 44100, target_sr = 16000)
         # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
         # audio = decode_audio(wav_audio_data)
