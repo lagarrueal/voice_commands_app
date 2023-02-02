@@ -174,3 +174,4 @@ with container_live:
         sound_slice = audio[left_index:right_index]
         
         st.write(sound_slice.shape)
+        st.write(type(sound_slice))
