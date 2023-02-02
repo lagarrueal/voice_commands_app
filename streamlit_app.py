@@ -142,7 +142,7 @@ with container_live:
         try :
             audio = tf.io.decode_raw(wav_audio_data, tf.float32)
             st.write(type(audio))
-            st.write(audio.shape())
+            st.write(audio.numpy().shape())
         except :
             st.write("nothing was done")
 
