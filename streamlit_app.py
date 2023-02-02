@@ -136,6 +136,5 @@ with container_live:
     st.write("Try the model with your own audio file")
     wav_audio_data = st_audiorec() # tadaaaa! yes, that's it! :D
 
-    if wav_audio_data is not None:
-        # display audio data as received on the Python side
-        st.audio(wav_audio_data, format='audio/wav')
+    if len(wav_audio_data) > 0:
+        st.write(wav_audio_data.shape)
