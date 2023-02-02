@@ -147,6 +147,7 @@ with container_live:
             st.write("nothing was done")
         
         audio = audio.numpy()
+        audio = np.nan_to_num(audio)
         st.write(audio)
         st.write(type(audio))
         # audio = librosa.resample(audio, 44100, 16000)
