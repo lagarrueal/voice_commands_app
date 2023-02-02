@@ -155,3 +155,22 @@ with container_live:
         st.write(audio.shape)
         # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
         # audio = decode_audio(wav_audio_data)
+        
+        FRAME_LENGTH = 1024
+        HOP_LENGTH = 256
+        NUM_SECONDS_OF_SLICE = 1
+        
+        clip_rms = librosa.feature.rms(y=audio,
+                                        frame_length=FRAME_LENGTH,
+                                        hop_length=HOP_LENGTH)
+
+        clip_rms = clip_rms.squeeze()
+        peak_rms_index = clip_rms.argmax()
+        peak_index = peak_rms_index * HOP_LENGTH + int(FRAME_LENGTH/2)
+
+        half_slice_width = int(NUM_SECONDS_OF_SLICE * 16000 / 2)
+        left_index = max(0, peak_index - half_slice_width)
+        right_index = peak_index + half_slice_width
+        sound_slice = audio[left_index:right_index]
+        
+        st.write(sound_slice.shape)
