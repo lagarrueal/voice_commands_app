@@ -152,7 +152,7 @@ with container_live:
         imp_mean = tf.math.divide(tf.reduce_sum(mask, axis=0), mask_norm)
 
         #transform
-        tf.where(tf.math.is_nan(X) , imp_mean , X)
+        tf.where(tf.math.is_nan(audio) , imp_mean , audio)
         audio = audio.numpy()
         audio = librosa.resample(audio, 44100, 16000)
         # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
