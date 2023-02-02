@@ -140,6 +140,8 @@ with container_live:
         st.write(type(wav_audio_data))
         # using librosa, resample to 16kHz
         audio = tf.io.decode_raw(wav_audio_data, tf.float32)
+        st.write(type(audio))
+        
         audio = librosa.resample(audio, 44100, 16000)
         decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
         audio = decode_audio(wav_audio_data)
