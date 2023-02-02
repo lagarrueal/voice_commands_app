@@ -166,9 +166,9 @@ with container_live:
 
         clip_rms = clip_rms.squeeze()
         peak_rms_index = clip_rms.argmax()
-        peak_index = peak_rms_index * HOP_LENGTH + int(FRAME_LENGTH/2)
+        peak_index = peak_rms_index * HOP_LENGTH + int(FRAME_LENGTH)
 
-        half_slice_width = int(NUM_SECONDS_OF_SLICE * 16000 / 2)
+        half_slice_width = int(NUM_SECONDS_OF_SLICE * 16000)
         left_index = max(0, peak_index - half_slice_width)
         right_index = peak_index + half_slice_width
         sound_slice = audio[left_index:right_index]
