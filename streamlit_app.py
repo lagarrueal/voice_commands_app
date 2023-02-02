@@ -145,7 +145,14 @@ with container_live:
             st.write(audio)
         except :
             st.write("nothing was done")
+        
+        #compute imputer mean
+        mask = tf.where(tf.math.is_nan(audio) , 0. , audio)
+        mask_norm = tf.reduce_sum(tf.clip_by_value(mask, 0., 1.),axis=0)
+        imp_mean = tf.math.divide(tf.reduce_sum(mask, axis=0), mask_norm)
 
+        #transform
+        tf.where(tf.math.is_nan(X) , imp_mean , X)
         audio = audio.numpy()
         audio = librosa.resample(audio, 44100, 16000)
         # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
