@@ -1,23 +1,21 @@
-import librosa
 import os
 
 import streamlit               as st
-import streamlit.components.v1 as components
 import numpy                   as np
 import pandas                  as pd
 import tensorflow              as tf
 import plotly.graph_objs       as go
 import plotly.express          as px
 
-from io                   import BytesIO
-from PIL                  import Image
-from st_custom_components import st_audiorec
+from audio_recorder_streamlit import audio_recorder
+
+
 
 def decode_audio(audio_binary):
     # Decode WAV-encoded audio files to `float32` tensors, 
     # normalized to the [-1.0, 1.0] range. Return `float32` audio and a sample rate.
     try :
-        audio, _ = tf.audio.decode_wav(contents=audio_binary)
+        audio, _ = tf.audio.decode_wav(contents=audio_binary, desired_channels=1)
     except :
         return None
     # Since all the data is single channel (mono), drop the `channels`
@@ -76,14 +74,15 @@ st.markdown(
 options = os.listdir(DATA_PATH)
 options.insert(0, "Select a file")
 
-option = st.selectbox(
-    'Please select an audio file to try the model:',
-    options)
+
 
 container_test = st.container()
 container_upload = st.container()
+container_record = st.container()
 
 with container_test:
+    st.title("Test the model with our audio files")
+    option = st.selectbox('Please select an audio file to try the model:', options)
     if option != "Select a file":
         st.write('You selected:', option)
         
@@ -136,12 +135,15 @@ with container_test:
             # display the image of the predicted class
             # the images are stored in assets/classes/
             st.image(IMAGE_PATH + best_pred + ".png", caption=f"The model predicts: {best_pred}", width=400, use_column_width=False)
+            st.markdown('##')
+            st.markdown('##')
             
     else:
         st.markdown('##')
         st.markdown('##')
 
 with container_upload:
+    st.title("Upload your own audio file")
     uploaded_file = st.file_uploader("Choose a file")
     if uploaded_file is not None:
         st.write("Listen to the audio file")
@@ -189,3 +191,64 @@ with container_upload:
         # display the image of the predicted class
         # the images are stored in assets/classes/
         st.image(IMAGE_PATH + best_pred + ".png", caption=f"The model predicts: {best_pred}", width=400, use_column_width=False)
+        st.markdown('##')
+        st.markdown('##')
+            
+    else:
+        st.markdown('##')
+        st.markdown('##')
+
+
+with container_record:
+    st.title("Record your own audio")
+    audio_bytes = audio_recorder(sample_rate=16000, text="Click to start the record, then click again to stop")
+    if audio_bytes:
+        st.audio(audio_bytes, format="audio/wav")
+        waveform = decode_audio(audio_bytes)
+        spectrogram = get_spectrogram(waveform).numpy()
+        waveform = waveform.numpy()
+        if len(spectrogram.shape) > 2:
+            assert len(spectrogram.shape) == 3
+            spectrogram = np.squeeze(spectrogram, axis=-1)
+        log_spec = np.log(spectrogram.T + np.finfo(float).eps)
+        height = log_spec.shape[0]
+        width = log_spec.shape[1]
+        X = np.linspace(0, np.size(spectrogram), num=width, dtype=int)
+        Y = [i for i in range(height)]
+        
+        df_wf = pd.DataFrame(columns=["time","Amplitude"])
+        df_wf["time"] = np.arange(0, len(waveform))
+        df_wf["Amplitude"] = waveform
+        fig = px.line(df_wf, x="time", y="Amplitude", title="Audio waveform", width=800, height=400)
+        st.plotly_chart(fig)
+        
+        # Create a trace for the spectrogram
+        trace = go.Heatmap( z=log_spec, x=X, y=Y, colorscale='Viridis', showscale=False)
+        data=[trace]
+        layout = go.Layout( title="Spectrogram", width=800, height=400) 
+        fig = go.Figure(data=data, layout=layout)
+        st.plotly_chart(fig)
+        
+        tensor = tf.convert_to_tensor(spectrogram)
+        tensor = tf.expand_dims(tensor, 0)
+        tensor = np.array(tensor.numpy())
+        
+        prediction = MODEL.predict(tensor)
+        
+        # Bar chart of the prediction for each class
+        fig = go.Figure(data=[go.Bar(x=TARGETS, y=tf.nn.softmax(prediction[0]))])
+        fig.update_layout(title_text='Prediction for each class', width=800, height=400)
+        st.plotly_chart(fig)
+        st.markdown('##')
+        
+        best_pred = TARGETS[np.argmax(prediction[0])]
+        # st.write("The model predicts: " + best_pred)
+        # display the image of the predicted class
+        # the images are stored in assets/classes/
+        st.image(IMAGE_PATH + best_pred + ".png", caption=f"The model predicts: {best_pred}", width=400, use_column_width=False)
+        st.markdown('##')
+        st.markdown('##')
+            
+    else:
+        st.markdown('##')
+        st.markdown('##')
