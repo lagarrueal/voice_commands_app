@@ -10,6 +10,7 @@ import plotly.graph_objs       as go
 import plotly.express          as px
 
 from io                   import BytesIO
+from PIL                  import Image
 from st_custom_components import st_audiorec
 
 def decode_audio(audio_binary):
@@ -48,10 +49,11 @@ def get_spectrogram(waveform):
 
 MODEL_PATH = 'models/model_cnn.h5'
 DATA_PATH = 'data/'
+IMAGE_PATH = 'assets/classes/'
 
 MODEL = tf.keras.models.load_model(MODEL_PATH)
 
-TARGETS = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown", "_background_noise_"]
+TARGETS = ["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "unknown"]
 
 # The code below is for the title and logo for this page.
 st.set_page_config(page_title="Commands Recognition App", page_icon="💬")
@@ -79,7 +81,7 @@ option = st.selectbox(
     options)
 
 container_test = st.container()
-container_live = st.container()
+container_upload = st.container()
 
 with container_test:
     if option != "Select a file":
@@ -128,57 +130,62 @@ with container_test:
             fig.update_layout(title_text='Prediction for each class', width=800, height=400)
             st.plotly_chart(fig)
             st.markdown('##')
+            
+            best_pred = TARGETS[np.argmax(prediction[0])]
+            # st.write("The model predicts: " + best_pred)
+            # display the image of the predicted class
+            # the images are stored in assets/classes/
+            st.image(IMAGE_PATH + best_pred + ".png", caption=f"The model predicts: {best_pred}", width=400, use_column_width=False)
+            
     else:
         st.markdown('##')
         st.markdown('##')
-    
-with container_live:
-    st.write("Try the model with your own audio file")
-    wav_audio_data = st_audiorec() # tadaaaa! yes, that's it! :D
 
-    if wav_audio_data is not None:
-        st.write(type(wav_audio_data))
+with container_upload:
+    uploaded_file = st.file_uploader("Choose a file")
+    if uploaded_file is not None:
+        st.write("Listen to the audio file")
+        st.audio(uploaded_file, format='audio/wav')
         
-        wf = decode_audio(wav_audio_data)
-        # using librosa, resample to 16kHz
-        # try :
-        #     audio = tf.io.decode_raw(wav_audio_data, tf.float32)
-        #     st.write(type(audio))
-        #     st.write(audio)
-        # except :
-        #     st.write("nothing was done")
+        waveform = decode_audio(uploaded_file.read())
+        spectrogram = get_spectrogram(waveform).numpy()
+        waveform = waveform.numpy()
+        if len(spectrogram.shape) > 2:
+            assert len(spectrogram.shape) == 3
+            spectrogram = np.squeeze(spectrogram, axis=-1)
+        log_spec = np.log(spectrogram.T + np.finfo(float).eps)
+        height = log_spec.shape[0]
+        width = log_spec.shape[1]
+        X = np.linspace(0, np.size(spectrogram), num=width, dtype=int)
+        Y = [i for i in range(height)]
         
-        # audio = audio.numpy()
-        # audio = np.nan_to_num(audio)
-        # st.write(audio)
-        # st.write(type(audio))
-        # st.write(audio.shape)
-        # audio = librosa.resample(audio, orig_sr = 44100, target_sr = 16000)
-        # st.write(audio.shape)
-        # # decoded = tf.audio.decode_wav(wav_audio_data, desired_channels=1, desired_samples=16000)
-        # # audio = decode_audio(wav_audio_data)
+        df_wf = pd.DataFrame(columns=["time","Amplitude"])
+        df_wf["time"] = np.arange(0, len(waveform))
+        df_wf["Amplitude"] = waveform
+        fig = px.line(df_wf, x="time", y="Amplitude", title="Audio waveform", width=800, height=400)
+        st.plotly_chart(fig)
         
-        # FRAME_LENGTH = 1024
-        # HOP_LENGTH = 256
-        # NUM_SECONDS_OF_SLICE = 1
+        # Create a trace for the spectrogram
+        trace = go.Heatmap( z=log_spec, x=X, y=Y, colorscale='Viridis', showscale=False)
+        data=[trace]
+        layout = go.Layout( title="Spectrogram", width=800, height=400) 
+        fig = go.Figure(data=data, layout=layout)
+        st.plotly_chart(fig)
         
-        # clip_rms = librosa.feature.rms(y=audio,
-        #                                 frame_length=FRAME_LENGTH,
-        #                                 hop_length=HOP_LENGTH)
-
-        # clip_rms = clip_rms.squeeze()
-        # peak_rms_index = clip_rms.argmax()
-        # peak_index = peak_rms_index * HOP_LENGTH + int(FRAME_LENGTH)
-
-        # half_slice_width = int(NUM_SECONDS_OF_SLICE * 16000)
-        # left_index = max(0, peak_index - half_slice_width)
-        # right_index = peak_index + half_slice_width
-        # sound_slice = audio[left_index:right_index]
+        tensor = tf.convert_to_tensor(spectrogram)
+        tensor = tf.expand_dims(tensor, 0)
+        tensor = np.array(tensor.numpy())
         
-        # st.write(sound_slice.shape)
-        # st.write(type(sound_slice))
+        prediction = MODEL.predict(tensor)
         
-        # # np.ndarray to bytes
-        # sound_slice = sound_slice.tobytes()
-        # st.write(type(sound_slice))
-        # st.audio(sound_slice, format='audio/wav')
+        # Bar chart of the prediction for each class
+        fig = go.Figure(data=[go.Bar(x=TARGETS, y=tf.nn.softmax(prediction[0]))])
+        fig.update_layout(title_text='Prediction for each class', width=800, height=400)
+        st.plotly_chart(fig)
+        st.markdown('##')
+        
+        best_pred = TARGETS[np.argmax(prediction[0])]
+        # st.write("The model predicts: " + best_pred)
+        # display the image of the predicted class
+        # the images are stored in assets/classes/
+        st.image(IMAGE_PATH + best_pred + ".png", caption=f"The model predicts: {best_pred}", width=400, use_column_width=False)
