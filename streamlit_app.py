@@ -74,8 +74,6 @@ st.markdown(
 options = os.listdir(DATA_PATH)
 options.insert(0, "Select a file")
 
-
-
 container_test = st.container()
 container_upload = st.container()
 container_record = st.container()
@@ -85,14 +83,14 @@ with container_test:
     option = st.selectbox('Please select an audio file to try the model:', options)
     if option != "Select a file":
         st.write('You selected:', option)
-        
+        st.write("Listen to the audio file")
+        st.audio("data/" + option, format='audio/wav')
         button = st.button('Try the model')
         if not button:
             st.markdown('##')
             st.markdown('##')
         if button:
-            st.write("Listen to the audio file")
-            st.audio("data/" + option, format='audio/wav')
+
             audio = decode_audio(tf.io.read_file("data/" + option))
             spectrogram = get_spectrogram(audio).numpy()
             audio = audio.numpy()
